@@ -1,0 +1,1 @@
+while using postman and creating a user with data given in json key value pair add the json data in body section inside body section inside the raw section add the key value pair dont add through parmas either isndid ebody add through raw or add through json 

@@ -1,0 +1,12 @@
+rest api = som data
+get/user = list all user jitne user hai unka data lena koi databse se
+
+
+get/user/1  get user data with id1 useer jiski id 1 hai uska data lena
+get/user/2  get user with data with id2
+
+
+post/users  edit the user with id1
+patch/user/1  edit the user with id 1 
+
+delete/user/1  delet ethe use riwht id1

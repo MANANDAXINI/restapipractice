@@ -1,0 +1,119 @@
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const app = express();
+const PORT = 8000;
+
+// Middleware to parse URL-encoded data and JSON data
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+// Middleware for logging requests
+app.use((req, res, next) => {
+  console.log("hello from middleware 1");
+  next();
+});
+
+// Middleware for conditional handling and logging requests
+app.use((req, res, next) => {
+  const logFilePath = path.join(__dirname, "log.txt");
+  const logEntry = `\n${Date.now()}: ${req.method}:${req.path}`;
+
+  fs.appendFile(logFilePath, logEntry, (err) => {
+    if (err) {
+      console.error("Failed to write to log file:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+    next(); // Continue to the next middleware or route handler
+  });
+});
+
+// Path to the JSON file
+const filePath = path.join(__dirname, "MOCK_DATA (1).json");
+
+// Function to read users from the JSON file
+const getUsers = () => {
+  if (!fs.existsSync(filePath)) {
+    // If the file does not exist, create an empty array
+    return [];
+  }
+  const data = fs.readFileSync(filePath, "utf8");
+  return JSON.parse(data);
+};
+
+// Function to save users to the JSON file
+const saveUsers = (users) => {
+  fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
+};
+
+// Route to get all users
+app.get("/api/users", (req, res) => {
+  const users = getUsers();
+  res.setHeader("X-Custom-Header", "CustomHeaderValue"); // Set custom header
+  return res.json(users);
+});
+
+// Route to display users as an HTML list
+app.get("/user", (req, res) => {
+  const users = getUsers();
+  res.setHeader("X-Custom-Header", "CustomHeaderValue"); // Set custom header
+  const html = `
+        <ul>
+            ${users.map((user) => `<li>${user.first_name}</li>`).join('')}
+        </ul>
+    `;
+  res.send(html);
+});
+
+// Route to get a specific user by ID
+app.get("/api/user/:id", (req, res) => {
+  const id = Number(req.params.id); // Convert id to a number
+  const users = getUsers();
+  const user = users.find((user) => user.id === id);
+  if (user) {
+    res.setHeader("X-Custom-Header", "CustomHeaderValue"); // Set custom header
+    return res.json(user);
+  } else {
+    return res.status(404).json({ error: "User not found" });
+  }
+});
+
+// Route to update a user by ID (patch)
+app.patch("/api/user/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const updatedUser = req.body;
+  let users = getUsers();
+  const index = users.findIndex((user) => user.id === id);
+  if (index !== -1) {
+    users[index] = { ...users[index], ...updatedUser };
+    saveUsers(users);
+    return res.json({ status: "success", user: users[index] });
+  } else {
+    return res.status(404).json({ error: "User not found" });
+  }
+});
+
+// Route to create a new user (post)
+app.post("/api/user", (req, res) => {
+  const body = req.body;
+  if (!body.first_name || !body.email || !body.last_email || !body.gender) {
+    return res.status(400).json({ msg: "All fields are required" });
+  }
+  const users = getUsers();
+  users.push(body);
+  saveUsers(users);
+  return res.status(201).json({ status: "success", user: body });
+});
+
+// Route to delete a user by ID
+app.delete("/api/user/delete/:id", (req, res) => {
+  const id = Number(req.params.id);
+  let users = getUsers();
+  users = users.filter((user) => user.id !== id);
+  saveUsers(users);
+  return res.json({ status: "success" });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
