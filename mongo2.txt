@@ -1,0 +1,1 @@
+for installation of mongodb you should first check whetehr mongosh is running properly in the cmd or shell after that you need to install mongosse for mongodb

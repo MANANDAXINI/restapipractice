@@ -1,8 +1,33 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose"); // Corrected import
 const app = express();
 const PORT = 8000;
+
+// Connection mongoose with database
+mongoose
+  .connect('mongodb://127.0.0.1:27017/yt-app-1')
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("MongoDB connection error:", err));
+
+// Schema
+const userSchema = new mongoose.Schema({
+  first_name: {
+    type: String,
+    required: true,
+  },
+  last_name: {
+    type: String,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+});
+
+const User = mongoose.model('User', userSchema);
 
 // Middleware to parse URL-encoded data and JSON data
 app.use(express.urlencoded({ extended: false }));
@@ -10,7 +35,7 @@ app.use(express.json());
 
 // Middleware for logging requests
 app.use((req, res, next) => {
-  console.log("hello from middleware 1");
+  console.log("Hello from middleware 1");
   next();
 });
 
@@ -105,15 +130,4 @@ app.post("/api/user", (req, res) => {
   return res.status(201).json({ status: "success", user: body });
 });
 
-// Route to delete a user by ID
-app.delete("/api/user/delete/:id", (req, res) => {
-  const id = Number(req.params.id);
-  let users = getUsers();
-  users = users.filter((user) => user.id !== id);
-  saveUsers(users);
-  return res.json({ status: "success" });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Rout

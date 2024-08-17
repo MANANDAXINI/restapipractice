@@ -1,0 +1,5 @@
+schema define the strucute
+schema banate hai jisme data strucutre efine karte hai jaise key kanusi rahegi and all
+
+
+using model we do crud operations
