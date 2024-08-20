@@ -1,7 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const mongoose = require("mongoose"); // Corrected import
+const mongoose = require("mongoose");
 const app = express();
 const PORT = 8000;
 
@@ -104,7 +104,7 @@ app.get("/api/user/:id", (req, res) => {
 });
 
 // Route to update a user by ID (patch)
-app.patch("/api/user/:id", (req, res) => {
+app.patch("/api/user/:id", async (req, res) => {
   const id = Number(req.params.id);
   const updatedUser = req.body;
   let users = getUsers();
@@ -112,6 +112,13 @@ app.patch("/api/user/:id", (req, res) => {
   if (index !== -1) {
     users[index] = { ...users[index], ...updatedUser };
     saveUsers(users);
+
+    await User.create({
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name,
+      email: updatedUser.email,
+    });
+
     return res.json({ status: "success", user: users[index] });
   } else {
     return res.status(404).json({ error: "User not found" });
@@ -119,15 +126,32 @@ app.patch("/api/user/:id", (req, res) => {
 });
 
 // Route to create a new user (post)
-app.post("/api/user", (req, res) => {
+app.post("/api/user", async (req, res) => {
   const body = req.body;
-  if (!body.first_name || !body.email || !body.last_email || !body.gender) {
-    return res.status(400).json({ msg: "All fields are required" });
+  if (!body.first_name || !body.email) {
+    return res.status(400).json({ msg: "First name and email are required" });
   }
-  const users = getUsers();
-  users.push(body);
-  saveUsers(users);
-  return res.status(201).json({ status: "success", user: body });
+  const newUser = {
+    first_name: body.first_name,
+    last_name: body.last_name,
+    email: body.email,
+  };
+
+  // Save to the MongoDB database
+  try {
+    const savedUser = await User.create(newUser);
+
+    // Optionally save to the JSON file
+    const users = getUsers();
+    users.push(newUser);
+    saveUsers(users);
+
+    return res.status(201).json({ status: "success", user: savedUser });
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to create user", details: error.message });
+  }
 });
 
-// Rout
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
